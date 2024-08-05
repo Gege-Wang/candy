@@ -1,14 +1,16 @@
 #![no_std]
 #![no_main]
 #![feature(custom_test_frameworks)]
-#![test_runner(crate::test_runner)]
+#![test_runner(candy::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
-mod vga_buffer;
+use candy::println;
 
-
-//static HELLO: &[u8] = b"Hello World!";
+// use vga_buffer::WRITER;
+// mod vga_buffer;
+// mod serial;
+// use crate::vga_buffer::BUFFER_HEIGHT;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
@@ -24,39 +26,47 @@ pub extern "C" fn _start() -> ! {
     
 }
 
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
     loop {}
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
-pub enum QemuExitCode {
-    Success = 0x10,
-    Failed = 0x11
-}
-
-pub fn exit_qemu(exit_code: QemuExitCode) {
-    use x86_64::instructions::port::Port;
-    unsafe {
-        let mut port = Port::new(0xf4);
-        port.write(exit_code as u32);
-    }
-}
-
 #[cfg(test)]
-fn test_runner(tests: &[&dyn Fn()]) {
-    println!("Running {} tests", tests.len());
-    for test in tests {
-        test();
-    }
-    exit_qemu(QemuExitCode::Success);
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    candy::test_panic_handler(info);
 }
 
-#[test_case]
-fn trivial_assertion() {
-    println!("trivial assertion...");
-    assert_eq!(2, 2);
-    println!("[ok]");
-}
+
+
+
+
+// #[test_case]
+// fn trivial_assertion() {
+//     assert_eq!(2, 2);
+// }
+
+// #[test_case]
+// fn test_println_single() {
+//     println!("Simple test to println something!");
+// }
+
+// #[test_case]
+// fn test_println_many() {
+//     for _ in 0..200 {
+//         println!("test println many");
+//     }
+// }
+
+// #[test_case]
+// fn test_println_output() {
+//     let s = "The quick brown fox jumps over the lazy dog";
+//     println!("{}", s);
+//     for (i, c) in s.chars().enumerate() {
+//         let schar = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
+//         assert_eq!(char::from(schar.ascii_character), c);
+//     }
+// }
+
