@@ -3,10 +3,11 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
-
+#![feature(abi_x86_interrupt)]
 use core::panic::PanicInfo;
 pub mod serial;
 pub mod vga_buffer;
+pub mod interrupts;
 
 #[cfg(test)]
 #[no_mangle]
@@ -14,10 +15,8 @@ pub extern "C" fn _start() -> ! {
     // vga_buffer::WRITER.lock().write_str("Hello World!").unwrap();
     // write!(vga_buffer::WRITER.lock(), "Lock Hello World!").unwrap();
     println!("Hello World{}", "!");
-
-    #[cfg(test)]
+    init();
     test_main();
-
     loop {}
 
     
@@ -36,6 +35,10 @@ fn panic(info: &PanicInfo) -> ! {
     test_panic_handler(info);
 }
 
+
+pub fn init() {
+    interrupts::init_idt();
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]

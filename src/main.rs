@@ -6,17 +6,15 @@
 
 use core::panic::PanicInfo;
 use candy::println;
-
-// use vga_buffer::WRITER;
-// mod vga_buffer;
-// mod serial;
-// use crate::vga_buffer::BUFFER_HEIGHT;
+use candy::init;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     // vga_buffer::WRITER.lock().write_str("Hello World!").unwrap();
     // write!(vga_buffer::WRITER.lock(), "Lock Hello World!").unwrap();
     println!("Hello World{}", "!");
+    init();
+    x86_64::instructions::interrupts::int3();
 
     #[cfg(test)]
     test_main();
