@@ -18,7 +18,7 @@ lazy_static! {
         // add a code segment descriptor
         let code_selector = gdt.append(Descriptor::kernel_code_segment());
         // add a data segment descriptor
-        //let data_selector = gdt.add_entry(Descriptor::kernel_data_segment());
+        // let data_selector = gdt.add_entry(Descriptor::kernel_data_segment());
         // add a tss descriptor
         let tss_selector = gdt.append(Descriptor::tss_segment(&TSS));
         (gdt, code_selector, tss_selector)

@@ -15,16 +15,16 @@ pub extern "C" fn _start() -> ! {
     // write!(vga_buffer::WRITER.lock(), "Lock Hello World!").unwrap();
     println!("Hello World{}", "!");
     candy::init();
-    // fn stack_overflow() {
-    //     stack_overflow(); // for each recursion, the return address is pushed
-    // }
-    // // trigger a stack overflow
-    // stack_overflow();
-    // trigger a page fault
-    unsafe {
-        *(0xdeadbee0 as *mut u64) = 42;
+    fn stack_overflow() {
+        stack_overflow(); // for each recursion, the return address is pushed
     }
-    x86_64::instructions::interrupts::int3();
+    // trigger a stack overflow
+    stack_overflow();
+    //trigger a page fault
+    // unsafe {
+    //     *(0xdeadbee0 as *mut u64) = 42;
+    // }
+    // x86_64::instructions::interrupts::int3();
 
     #[cfg(test)]
     test_main();
