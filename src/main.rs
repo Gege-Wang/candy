@@ -6,14 +6,24 @@
 
 use core::panic::PanicInfo;
 use candy::println;
-use candy::init;
+
+
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     // vga_buffer::WRITER.lock().write_str("Hello World!").unwrap();
     // write!(vga_buffer::WRITER.lock(), "Lock Hello World!").unwrap();
     println!("Hello World{}", "!");
-    init();
+    candy::init();
+    // fn stack_overflow() {
+    //     stack_overflow(); // for each recursion, the return address is pushed
+    // }
+    // // trigger a stack overflow
+    // stack_overflow();
+    // trigger a page fault
+    unsafe {
+        *(0xdeadbee0 as *mut u64) = 42;
+    }
     x86_64::instructions::interrupts::int3();
 
     #[cfg(test)]
