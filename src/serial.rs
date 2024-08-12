@@ -1,13 +1,13 @@
-use uart_16550::SerialPort;
-use spin::Mutex;
-use lazy_static::lazy_static;
 use core::fmt;
+use lazy_static::lazy_static;
+use spin::Mutex;
+use uart_16550::SerialPort;
 
 // initial a static mutable variable
 
-lazy_static!{
+lazy_static! {
     pub static ref SERIAL1: Mutex<SerialPort> = Mutex::new({
-        let mut serial_port = unsafe{SerialPort::new(0x3F8)};
+        let mut serial_port = unsafe { SerialPort::new(0x3F8) };
         serial_port.init();
         serial_port
     });
@@ -28,7 +28,10 @@ macro_rules! serial_println {
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     use x86_64::instructions::interrupts;
-    interrupts::without_interrupts(||{
-        SERIAL1.lock().write_fmt(args).expect("Printing to serial failed");
+    interrupts::without_interrupts(|| {
+        SERIAL1
+            .lock()
+            .write_fmt(args)
+            .expect("Printing to serial failed");
     });
 }

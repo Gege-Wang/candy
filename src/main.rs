@@ -4,10 +4,8 @@
 #![test_runner(candy::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
-use core::panic::PanicInfo;
 use candy::{hlt_loop, println};
-
-
+use core::panic::PanicInfo;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
@@ -17,12 +15,7 @@ pub extern "C" fn _start() -> ! {
     #[cfg(test)]
     test_main();
 
-    //hlt_loop();
-    loop{
-        
-    }
-
-    
+    hlt_loop();
 }
 
 #[cfg(not(test))]
@@ -37,4 +30,3 @@ fn panic(info: &PanicInfo) -> ! {
 fn panic(info: &PanicInfo) -> ! {
     candy::test_panic_handler(info);
 }
-

@@ -5,10 +5,10 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
 use core::panic::PanicInfo;
+pub mod gdt;
+pub mod interrupts;
 pub mod serial;
 pub mod vga_buffer;
-pub mod interrupts;
-pub mod gdt;
 
 #[cfg(test)]
 #[no_mangle]
@@ -19,8 +19,6 @@ pub extern "C" fn _start() -> ! {
     init();
     test_main();
     hlt_loop();
-
-    
 }
 
 pub fn hlt_loop() -> ! {
@@ -41,7 +39,6 @@ fn panic(info: &PanicInfo) -> ! {
     test_panic_handler(info);
 }
 
-
 pub fn init() {
     gdt::init();
     interrupts::init_idt();
@@ -53,7 +50,7 @@ pub fn init() {
 #[repr(u32)]
 pub enum QemuExitCode {
     Success = 0x10,
-    Failed = 0x11
+    Failed = 0x11,
 }
 
 pub fn exit_qemu(exit_code: QemuExitCode) {
@@ -72,14 +69,13 @@ pub fn test_runner(tests: &[&dyn Testable]) {
     exit_qemu(QemuExitCode::Success);
 }
 
-
 pub trait Testable {
     fn run(&self);
 }
 
-impl <T> Testable for T
-where 
-    T:Fn(),
+impl<T> Testable for T
+where
+    T: Fn(),
 {
     fn run(&self) {
         serial_print!("{}... ", core::any::type_name::<T>());

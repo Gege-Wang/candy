@@ -1,11 +1,11 @@
 #![no_std]
 #![no_main]
 
-use core::panic::PanicInfo;
+use candy::exit_qemu;
 use candy::println;
 use candy::serial_print;
-use candy::exit_qemu;
 use candy::QemuExitCode;
+use core::panic::PanicInfo;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
@@ -16,14 +16,11 @@ pub extern "C" fn _start() -> ! {
 }
 
 #[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    
+fn panic(_info: &PanicInfo) -> ! {
     serial_print!("[ok]\n");
     exit_qemu(QemuExitCode::Success);
     loop {}
 }
-
-
 
 fn should_fail() {
     println!("should_panic:::should_fail");
