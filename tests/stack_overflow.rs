@@ -15,7 +15,6 @@ pub extern "C" fn _start() -> ! {
     init_test_idt();
     candy::gdt::init();
     stack_overflow();
-    //panic!("Execution continued after stack overflow");
 
     loop {}
 }

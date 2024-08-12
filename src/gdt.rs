@@ -3,7 +3,7 @@
 //loading the gdt
 //loading the tr
 //double exception switch the stack
-
+#[warn(static_mut_refs)]
 use x86_64::structures::gdt::{GlobalDescriptorTable, Descriptor, SegmentSelector};
 use x86_64::structures::tss::TaskStateSegment;
 use x86_64::instructions::tables::load_tss;
@@ -17,8 +17,6 @@ lazy_static! {
         let mut gdt = GlobalDescriptorTable::new();
         // add a code segment descriptor
         let code_selector = gdt.append(Descriptor::kernel_code_segment());
-        // add a data segment descriptor
-        // let data_selector = gdt.add_entry(Descriptor::kernel_data_segment());
         // add a tss descriptor
         let tss_selector = gdt.append(Descriptor::tss_segment(&TSS));
         (gdt, code_selector, tss_selector)
@@ -45,11 +43,6 @@ pub fn init() {
     GDT.0.load();
     unsafe {
         CS::set_reg(SegmentSelector::from(GDT.1));
-        //x86_64::instructions::segmentation::set_ds(SegmentSelector::from(0));
-        //x86_64::instructions::segmentation::set_es(SegmentSelector::from(0));
-        //x86_64::instructions::segmentation::set_fs(SegmentSelector::from(0));
-        //x86_64::instructions::segmentation::set_gs(SegmentSelector::from(0));
-        //x86_64::instructions::segmentation::set_ss(SegmentSelector::from(0));
         load_tss(SegmentSelector::from(GDT.2));
     }
 }
