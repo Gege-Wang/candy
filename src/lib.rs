@@ -5,14 +5,22 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
 use core::panic::PanicInfo;
+
+
 pub mod gdt;
 pub mod interrupts;
 pub mod serial;
 pub mod vga_buffer;
+pub mod memory;
 
 #[cfg(test)]
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+use bootloader::{BootInfo, entry_point};
+
+#[cfg(test)]
+entry_point!(test_kernel_main);
+
+#[cfg(test)]
+fn test_kernel_main(_boot_info: &'static bootloader::BootInfo) -> ! {
     // vga_buffer::WRITER.lock().write_str("Hello World!").unwrap();
     // write!(vga_buffer::WRITER.lock(), "Lock Hello World!").unwrap();
     println!("Hello World{}", "!");
