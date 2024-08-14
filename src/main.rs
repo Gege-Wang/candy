@@ -4,10 +4,9 @@
 #![test_runner(candy::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+use bootloader::{entry_point, BootInfo};
 use candy::{hlt_loop, println};
 use core::panic::PanicInfo;
-use bootloader::{BootInfo, entry_point};
-
 
 entry_point!(kernel_main);
 
@@ -15,8 +14,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("Hello World{}", "!");
     candy::init();
 
-    use x86_64::VirtAddr;
     use x86_64::structures::paging::PageTable;
+    use x86_64::VirtAddr;
     let physical_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let page_table = unsafe { candy::memory::active_level_4_table(physical_mem_offset) };
     for (i, entry) in page_table.iter().enumerate() {
@@ -25,7 +24,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
             let physic = entry.frame().unwrap().start_address();
             let virt = boot_info.physical_memory_offset + physic.as_u64();
             let virt_ptr = VirtAddr::new(virt).as_mut_ptr();
-            let page_table_l3: &PageTable = unsafe{& *virt_ptr};
+            let page_table_l3: &PageTable = unsafe { &*virt_ptr };
 
             for (i, entry) in page_table_l3.iter().enumerate() {
                 if !entry.is_unused() {
@@ -33,7 +32,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
                 }
             }
         }
-
     }
 
     #[cfg(test)]
