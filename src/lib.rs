@@ -13,8 +13,7 @@ pub mod serial;
 pub mod vga_buffer;
 
 #[cfg(test)]
-use bootloader::{entry_point, BootInfo};
-
+use bootloader::entry_point;
 #[cfg(test)]
 entry_point!(test_kernel_main);
 
