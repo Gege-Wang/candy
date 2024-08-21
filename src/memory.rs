@@ -1,9 +1,10 @@
-use x86_64::{
-    structures::paging::{OffsetPageTable, PageTable},
-    PhysAddr, VirtAddr,
-};
-
-pub unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut PageTable {
+use x86_64::structures::paging::mapper:: OffsetPageTable;
+use x86_64::{structures::paging::PageTable, PhysAddr, VirtAddr};
+use x86_64::structures::paging::PhysFrame;
+/// should only be called once from `init` function, because it can easily lead to
+/// aliased mutable references when called multiple times, which can cause undefined behavior.
+/// so it can not be pub.
+unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut PageTable {
     use x86_64::registers::control::Cr3;
     let (active_level_4_table_frame, _) = Cr3::read();
     let active_level_4_table_ptr =
@@ -11,37 +12,41 @@ pub unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static
     &mut *active_level_4_table_ptr
 }
 
-pub unsafe fn translate_addr(addr: VirtAddr, physical_memory_offset: VirtAddr) -> Option<PhysAddr> {
-    translate_addr_inner(addr, physical_memory_offset)
+pub unsafe fn init(physical_memory_offset: VirtAddr) -> OffsetPageTable<'static> {
+    let level_4_table = active_level_4_table(physical_memory_offset);
+    OffsetPageTable::new(level_4_table, physical_memory_offset)
 }
 
-fn translate_addr_inner(addr: VirtAddr, physical_memory_offset: VirtAddr) -> Option<PhysAddr> {
-    use x86_64::registers::control::Cr3;
-    use crate::println;
+use x86_64::structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags as Flags};
+use x86_64::structures::paging::Size4KiB;
+/// 我不需要知道物理页框，分配器回去调整。
+/// 我需要知道虚拟地址，标志位以及什么样的分配器。 mapper 和分配器有什么区别呢？
+pub fn create_example_mapping(
+    page: Page,
+    flags: Flags,
+    mapper: &mut OffsetPageTable,
+    frame_allocator: &mut impl FrameAllocator<Size4KiB>,
 
-    let (level_4_table_frame, _) = Cr3::read();
+) {
+     // 虚拟地址
+     // 物理页框
+     // 标志位
+     // 分配器
 
-    let table_indexes = [
-        addr.p4_index(),
-        addr.p3_index(),
-        addr.p2_index(),
-        addr.p1_index(),
-    ];
-    let mut frame = level_4_table_frame;
-    for &index in &table_indexes {
-        let virt = physical_memory_offset + frame.start_address().as_u64();
-        let table_ptr = virt.as_mut_ptr();
+    
+    //  我现在需要为一个确定的物理地址建立映射， 我需要一个特定的物理页框
+    let frame = PhysFrame::containing_address(PhysAddr::new(0xb8000));
+     
+    //  what is mapper?
+     let map_result = unsafe{ mapper.map_to(page, frame, flags, frame_allocator) }; 
+     // 在更改页表之后不要忘记对 TLB  进行刷新
+     map_result.expect("map_to failed").flush();  
+}
 
-        let table = unsafe { &*(table_ptr as *const PageTable) };
+pub struct EmptyFrameAllocator;
 
-        let entry = &table[index];
-        frame = match entry.frame() {
-            Ok(frame) => frame,
-            Err(err) => {
-                println!("{:?}", err);
-                return None;
-            },
-        };
+unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame> {
+        None
     }
-    Some(frame.start_address() + u64::from(addr.page_offset()))
 }
