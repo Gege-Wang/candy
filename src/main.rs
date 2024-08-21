@@ -3,15 +3,20 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(candy::test_runner)]
 #![reexport_test_harness_main = "test_main"]
-
+extern crate alloc;
+use alloc::boxed::Box;
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::rc::Rc;
 use bootloader::{entry_point, BootInfo};
 use candy::{
     hlt_loop,
-    memory::{self, create_example_mapping},
+    memory,
     println,
+    allocator
 };
 use core::panic::PanicInfo;
-use x86_64::structures::paging::Translate;
+
 
 entry_point!(kernel_main);
 
@@ -20,28 +25,26 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     candy::init();
 
     use x86_64::VirtAddr;
-    use x86_64::structures::paging::{Page, PageTableFlags as Flags};
     let physical_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mut page_table = unsafe { memory::init(physical_mem_offset) };
+    let mut mapper = unsafe { memory::init(physical_mem_offset) };
     let mut frame_allocator = unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
-    let page = Page::containing_address(VirtAddr::new(0));
-    // 为他找到一个虚拟地址  如果我们已经知道物理地址 我们使用地址转换 mapper 进行 物理地址到虚拟地址的转换 然后我们创建一个页表项
-    //let phys_frame = frame_allocator.allocate_frame().expect("no more frames");
-    let flags = Flags::PRESENT | Flags::WRITABLE;
-    create_example_mapping(page, flags, &mut page_table, &mut frame_allocator);
-    let addresses = [
-        0x0,
-        0xb8000,
-        0x201008,
-        0x0100_0020_1a10,
-        boot_info.physical_memory_offset,
-    ];
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    for &address in &addresses {
-        let virt = VirtAddr::new(address);
-        let phys = page_table.translate_addr(virt);
-        println!("{:?} -> {:?}", virt, phys);
+    let x = Box::new(41);
+    println!("heap_value at {:p}", x);
+
+    let mut vec = Vec::new();
+    for i in 0..500 {
+        vec.push(i);
     }
+    println!("vec at {:p}", vec.as_slice());
+
+    let reference_count = Rc::new(vec![1, 2, 3]);
+    let cloned_reference = reference_count.clone();
+    println!("current reference count is {}", Rc::strong_count(&cloned_reference));
+    core::mem::drop(reference_count);
+    println!("reference count is {}", Rc::strong_count(&cloned_reference));
+
 
     #[cfg(test)]
     test_main();
