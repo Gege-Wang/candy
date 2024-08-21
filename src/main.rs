@@ -23,8 +23,10 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use x86_64::structures::paging::{Page, PageTableFlags as Flags};
     let physical_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut page_table = unsafe { memory::init(physical_mem_offset) };
-    let mut frame_allocator = memory::EmptyFrameAllocator;
+    let mut frame_allocator = unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
     let page = Page::containing_address(VirtAddr::new(0));
+    // 为他找到一个虚拟地址  如果我们已经知道物理地址 我们使用地址转换 mapper 进行 物理地址到虚拟地址的转换 然后我们创建一个页表项
+    //let phys_frame = frame_allocator.allocate_frame().expect("no more frames");
     let flags = Flags::PRESENT | Flags::WRITABLE;
     create_example_mapping(page, flags, &mut page_table, &mut frame_allocator);
     let addresses = [

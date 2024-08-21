@@ -1,3 +1,4 @@
+use bootloader::bootinfo::MemoryRegionType;
 use x86_64::structures::paging::mapper:: OffsetPageTable;
 use x86_64::{structures::paging::PageTable, PhysAddr, VirtAddr};
 use x86_64::structures::paging::PhysFrame;
@@ -28,11 +29,6 @@ pub fn create_example_mapping(
     frame_allocator: &mut impl FrameAllocator<Size4KiB>,
 
 ) {
-     // 虚拟地址
-     // 物理页框
-     // 标志位
-     // 分配器
-
     
     //  我现在需要为一个确定的物理地址建立映射， 我需要一个特定的物理页框
     let frame = PhysFrame::containing_address(PhysAddr::new(0xb8000));
@@ -43,10 +39,35 @@ pub fn create_example_mapping(
      map_result.expect("map_to failed").flush();  
 }
 
-pub struct EmptyFrameAllocator;
 
-unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
-    fn allocate_frame(&mut self) -> Option<PhysFrame> {
-        None
+pub struct BootInfoFrameAllocator {
+    memory_map: &'static bootloader::bootinfo::MemoryMap,
+    next: usize,
+}
+
+impl BootInfoFrameAllocator {
+
+    pub unsafe fn init(memory_map: &'static bootloader::bootinfo::MemoryMap) -> Self {
+        BootInfoFrameAllocator {
+            memory_map,
+            next: 4,
+        }
     }
+    //  返回一个迭代器，所以我们能够知道下一个我们想要的可用内存在哪里。
+    fn usable_frame(&self) -> impl Iterator<Item = PhysFrame> {
+        let usable_regions = self.memory_map.iter().filter(|r| r.region_type == MemoryRegionType::Usable);
+        let addr_ranges = usable_regions.map(|r| r.range.start_addr()..r.range.end_addr());
+        let frame_addressed = addr_ranges.flat_map(|r| r.step_by(4096));
+        frame_addressed.map(|addr| PhysFrame::containing_address(PhysAddr::new(addr)))
+
+    }
+}
+
+unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame<Size4KiB>> {
+        let frame = self.usable_frame().nth(self.next);
+        self.next += 1;
+        frame
+    }
+
 }
