@@ -5,18 +5,12 @@
 #![reexport_test_harness_main = "test_main"]
 extern crate alloc;
 use alloc::boxed::Box;
+use alloc::rc::Rc;
 use alloc::vec;
 use alloc::vec::Vec;
-use alloc::rc::Rc;
 use bootloader::{entry_point, BootInfo};
-use candy::{
-    hlt_loop,
-    memory,
-    println,
-    allocator
-};
+use candy::{allocator, hlt_loop, memory, println};
 use core::panic::PanicInfo;
-
 
 entry_point!(kernel_main);
 
@@ -27,7 +21,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use x86_64::VirtAddr;
     let physical_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(physical_mem_offset) };
-    let mut frame_allocator = unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
+    let mut frame_allocator =
+        unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
     let x = Box::new(41);
@@ -41,10 +36,12 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     let reference_count = Rc::new(vec![1, 2, 3]);
     let cloned_reference = reference_count.clone();
-    println!("current reference count is {}", Rc::strong_count(&cloned_reference));
+    println!(
+        "current reference count is {}",
+        Rc::strong_count(&cloned_reference)
+    );
     core::mem::drop(reference_count);
     println!("reference count is {}", Rc::strong_count(&cloned_reference));
-
 
     #[cfg(test)]
     test_main();

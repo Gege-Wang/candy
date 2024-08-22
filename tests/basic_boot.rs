@@ -4,16 +4,15 @@
 #![test_runner(candy::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+use bootloader::{entry_point, BootInfo};
 use candy::println;
 use core::panic::PanicInfo;
-use bootloader::{entry_point, BootInfo};
 entry_point!(main);
 fn main(boot_info: &'static BootInfo) -> ! {
     candy::init();
     test_main();
     candy::hlt_loop();
 }
-
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
