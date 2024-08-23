@@ -1,4 +1,5 @@
 
+use linked_list::LinkedListAllocator;
 use x86_64::structures::paging::mapper::{MapToError, Mapper};
 use x86_64::structures::paging::FrameAllocator;
 use x86_64::structures::paging::PageTableFlags as Flags;
@@ -12,7 +13,8 @@ pub mod linked_list;
 use bump::Bump;
 
 #[global_allocator]
-static ALLOCATOR: Locked<Bump> = Locked::new(Bump::new(HEAP_START as usize, HEAP_SIZE as usize));
+//static ALLOCATOR: Locked<Bump> = Locked::new(Bump::new(HEAP_START as usize, HEAP_SIZE as usize));
+static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new());
 
 pub fn init_heap(
     mapper: &mut impl Mapper<Size4KiB>,
@@ -31,6 +33,9 @@ pub fn init_heap(
             .ok_or(MapToError::FrameAllocationFailed)?;
         let flags = Flags::PRESENT | Flags::WRITABLE;
         unsafe { mapper.map_to(page, frame, flags, frame_allocator)?.flush() };
+    }
+    unsafe {
+        ALLOCATOR.lock().init(HEAP_START as usize, HEAP_SIZE as usize);
     }
     Ok(())
 }

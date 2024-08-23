@@ -8,6 +8,7 @@ extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
+use candy::println;
 
 entry_point!(main);
 
@@ -37,6 +38,8 @@ use alloc::boxed::Box;
 fn simple_allocation() {
     let heap_value_1 = Box::new(41);
     let heap_value_2 = Box::new(13);
+    println!("heap_value_1 at {}", *heap_value_1);
+    println!("heap_value_2 at {}", *heap_value_2);
     assert_eq!(*heap_value_1, 41);
     assert_eq!(*heap_value_2, 13);
 }
