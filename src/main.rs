@@ -9,9 +9,9 @@ use alloc::rc::Rc;
 use alloc::{task, vec};
 use alloc::vec::Vec;
 use bootloader::{entry_point, BootInfo};
-use candy::{allocator, hlt_loop, memory, println};
+use candy::{allocator, hlt_loop, interrupts, memory, println};
 use core::panic::PanicInfo;
-use candy::task::Task;
+use candy::task::{keyboard, Task};
 use candy::task::simple_executor::TaskQueue;
 
 entry_point!(kernel_main);
@@ -47,8 +47,11 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     let mut task_queue = TaskQueue::new();
     task_queue.spawn(Task::new(example_async_function()));
+    task_queue.spawn(Task::new(interrupts::print_keypresses()));
     task_queue.run();
+
     
+
     #[cfg(test)]
     test_main();
 
