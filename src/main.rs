@@ -6,11 +6,13 @@
 extern crate alloc;
 use alloc::boxed::Box;
 use alloc::rc::Rc;
-use alloc::vec;
+use alloc::{task, vec};
 use alloc::vec::Vec;
 use bootloader::{entry_point, BootInfo};
 use candy::{allocator, hlt_loop, memory, println};
 use core::panic::PanicInfo;
+use candy::task::Task;
+use candy::task::simple_executor::TaskQueue;
 
 entry_point!(kernel_main);
 
@@ -43,6 +45,10 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     core::mem::drop(reference_count);
     println!("reference count is {}", Rc::strong_count(&cloned_reference));
 
+    let mut task_queue = TaskQueue::new();
+    task_queue.spawn(Task::new(example_async_function()));
+    task_queue.run();
+    
     #[cfg(test)]
     test_main();
 
@@ -60,4 +66,14 @@ fn panic(info: &PanicInfo) -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     candy::test_panic_handler(info);
+}
+
+
+async fn async_number() -> u32 {
+    42
+}
+
+async fn example_async_function() {
+    let number = async_number().await;
+    println!("async number: {}", number);
 }
