@@ -6,7 +6,7 @@
 extern crate alloc;
 use alloc::boxed::Box;
 use alloc::rc::Rc;
-use alloc::{task, vec};
+use alloc::vec;
 use alloc::vec::Vec;
 use bootloader::{entry_point, BootInfo};
 use candy::{allocator, hlt_loop, interrupts, memory, println};
